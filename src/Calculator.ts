@@ -63,11 +63,10 @@ export const simulateEligibilityCheck = (req: LoanEligibilityRequest): LoanEligi
   const loanToIncomeRatio = (loanDetails.requestedAmount / financialInfo.monthlyIncome) * 100;
   
   // 2. Dynamically determine interest rate base layer from credit score
-  let interestRate = 14.5; // Base default
-  if (financialInfo.creditScore >= 750) interestRate = 10.5;
-  else if (financialInfo.creditScore >= 650) interestRate = 12.5;
-  else if (financialInfo.creditScore >= 550) interestRate = 16.0;
-  else interestRate = 18.5;
+  const interestRate = financialInfo.creditScore >= 750 ? 10.5
+    : financialInfo.creditScore >= 650 ? 12.5
+      : financialInfo.creditScore >= 550 ? 16.0
+        : 18.5;
 
   // 3. Compute Standard Amortization Formula
   const monthlyRate = (interestRate / 100) / 12;

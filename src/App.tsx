@@ -1,145 +1,84 @@
-import { useState } from 'react';
-// 1. Explicitly import types using the 'type' flag to satisfy your strict compiler rules
+import { useState, type FormEvent, type ReactNode } from 'react';
+import { ArrowRight, ArrowUpRight, Check, CheckCircle2, ChevronDown, CircleHelp, Clock3, LockKeyhole, ShieldCheck, Sparkles, WalletCards, XCircle } from 'lucide-react';
 import type { LoanEligibilityRequest, LoanEligibilityResponse } from './Calculator';
 import { simulateEligibilityCheck } from './Calculator';
 import { validationRules } from './validationRules';
-import { Shield, Wallet, Landmark, TrendingUp, CheckCircle, AlertTriangle, XCircle, RefreshCw } from 'lucide-react';
+import { signInDemoAccount, signUpDemoAccount } from './auth/mockAuth';
 
+type Screen = 'home' | 'auth' | 'simulator';
+type AuthMode = 'signin' | 'signup';
+const initialForm: LoanEligibilityRequest = {
+  personalInfo: { age: 29, employmentStatus: 'employed', employmentDuration: 36 },
+  financialInfo: { monthlyIncome: 32000, monthlyExpenses: 14500, existingDebt: 2500, creditScore: 680 },
+  loanDetails: { requestedAmount: 85000, loanTerm: 36, loanPurpose: 'home_improvement' },
+};
+const money = (value: number) => new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR', maximumFractionDigits: 0 }).format(value);
+
+function Brand() {
+  return <a className="brand" href="#home" aria-label="Capitec Credit home"><span className="brand-mark">c</span><span>capitec<span className="brand-light"> credit</span></span></a>;
+}
+function Header({ onSignIn, onStart }: { onSignIn: () => void; onStart: () => void }) {
+  return <header className="site-header"><div className="header-inner"><Brand/><nav className="main-nav" aria-label="Main navigation"><a href="#how-it-works">How it works</a><a href="#questions">FAQs</a></nav><div className="header-actions"><button className="button button-quiet" onClick={onSignIn}>Sign in</button><button className="button button-small button-primary" onClick={onStart}>Get started <ArrowRight size={16}/></button></div></div></header>;
+}
+function Footer() {
+  return <footer className="site-footer"><Brand/><p>© 2026 Capitec Credit. Demonstration only.</p><div><a href="#privacy">Privacy</a><a href="#help">Help centre</a></div></footer>;
+}
+function Home({ onStart }: { onStart: () => void }) {
+  return <><main id="home">
+    <section className="hero-section"><div className="hero-copy"><div className="eyebrow"><span className="eyebrow-dot"/> PERSONAL LOAN SIMULATOR</div><h1>A little more room<br/>for <em>what matters.</em></h1><p className="hero-lede">See what a personal loan could look like for you. Get a quick estimate with a few details about your monthly budget.</p><div className="hero-buttons"><button className="button button-primary button-large" onClick={onStart}>Check my options <ArrowRight size={18}/></button><a className="text-link" href="#how-it-works">See how it works <ArrowUpRight size={16}/></a></div><div className="trust-row"><span><ShieldCheck size={17}/> Your details stay private</span><span><Clock3 size={17}/> Takes about 3 minutes</span></div></div>
+      <div className="hero-art" aria-label="Illustration of a loan estimate"><div className="art-orbit orbit-one"/><div className="art-orbit orbit-two"/><div className="art-card"><div className="art-card-top"><span className="art-icon"><WalletCards size={20}/></span><span className="status-pill"><span/> ESTIMATE</span></div><div className="art-label">A possible monthly repayment</div><div className="art-amount">R 2,940<span> / month</span></div><div className="art-divider"/><div className="art-detail"><span>Loan amount</span><strong>R 85,000</strong></div><div className="art-detail"><span>Repayment term</span><strong>36 months</strong></div><div className="art-progress"><span/></div><div className="art-foot"><Sparkles size={15}/> Shaped around your budget</div></div><div className="float-note"><span className="float-check"><Check size={15}/></span><span><strong>Quick estimate</strong><small>No impact on your credit score</small></span></div><div className="art-stamp">A clearer<br/>way forward</div></div>
+    </section>
+    <section className="benefits" aria-label="Benefits"><div><span className="benefit-icon"><ShieldCheck size={19}/></span><strong>Private by design</strong><p>Your information is handled with care.</p></div><div><span className="benefit-icon"><CircleHelp size={19}/></span><strong>Know before you apply</strong><p>Understand repayments before deciding.</p></div><div><span className="benefit-icon"><Clock3 size={19}/></span><strong>Simple and quick</strong><p>A few details are all we need to start.</p></div></section>
+    <section className="steps-section" id="how-it-works"><div className="section-heading"><div className="eyebrow">A SIMPLE PLACE TO START</div><h2>Clarity in three steps.</h2><p>Get an estimate that helps you plan your next move.</p></div><div className="steps-grid"><article><span>01</span><h3>Tell us a little about you</h3><p>Share a few details about your work and monthly finances.</p></article><article><span>02</span><h3>Choose what you need</h3><p>Pick an amount and a repayment period that suits your plans.</p></article><article><span>03</span><h3>See your estimate</h3><p>Review an illustrative monthly repayment and affordability view.</p></article></div></section>
+    <section className="faq-section" id="questions"><div><div className="eyebrow">GOOD TO KNOW</div><h2>A few helpful answers.</h2></div><div className="faq-list"><details><summary>Does checking my estimate affect my credit score?<ChevronDown size={18}/></summary><p>No. This simulator uses the information you enter to create an illustration and does not run a credit bureau check.</p></details><details><summary>Is this a loan application?<ChevronDown size={18}/></summary><p>No. It is a planning estimate only. A real application would require additional checks and a formal offer.</p></details><details><summary>How accurate is the estimate?<ChevronDown size={18}/></summary><p>The estimate uses a simplified calculation for this demonstration. Actual rates and repayments depend on a lender’s assessment and terms.</p></details></div></section>
+    <section className="closing-cta"><div><div className="eyebrow">YOUR NEXT STEP, MADE CLEARER</div><h2>Let’s see what could work.</h2></div><button className="button button-primary button-large" onClick={onStart}>Start my estimate <ArrowRight size={18}/></button></section>
+  </main><Footer/></>;
+}
+function Auth({ mode, setMode, onContinue, onBack }: { mode: AuthMode; setMode: (mode: AuthMode) => void; onContinue: () => void; onBack: () => void }) {
+  const [email, setEmail] = useState(''); const [password, setPassword] = useState(''); const [error, setError] = useState('');
+  const submit = (event: FormEvent) => {
+    event.preventDefault();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setError('Enter a valid email address.'); return; }
+    if (password.length < 8) { setError('Use at least 8 characters for your password.'); return; }
+    const result = mode === 'signup' ? signUpDemoAccount(email, password) : signInDemoAccount(email, password);
+    if (!result.ok) { setError(result.message); return; }
+    setError(''); onContinue();
+  };
+  return <><main className="auth-page"><button className="back-link" onClick={onBack}>← Back to home</button><div className="auth-card"><div className="auth-symbol"><LockKeyhole size={22}/></div><div className="eyebrow">{mode === 'signup' ? 'CREATE YOUR PROFILE' : 'WELCOME BACK'}</div><h1>{mode === 'signup' ? 'Start with confidence.' : 'Good to see you.'}</h1><p className="auth-intro">{mode === 'signup' ? 'Save your estimate and pick up where you left off.' : 'Sign in to continue to your loan estimate.'}</p><form onSubmit={submit} noValidate><label className="field-label" htmlFor="email">Email address</label><input id="email" type="email" autoComplete="email" placeholder="you@example.com" value={email} onChange={e=>setEmail(e.target.value)} required/><label className="field-label" htmlFor="password">Password</label><input id="password" type="password" autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} placeholder="At least 8 characters" value={password} onChange={e=>setPassword(e.target.value)} required minLength={8}/>{error && <p className="form-error" role="alert">{error}</p>}<button className="button button-primary button-large auth-submit" type="submit">{mode === 'signup' ? 'Create profile' : 'Sign in'} <ArrowRight size={17}/></button></form><p className="auth-switch">{mode === 'signup' ? 'Already have a profile?' : 'New to Capitec Credit?'} <button onClick={()=>{setMode(mode === 'signup' ? 'signin' : 'signup');setError('');}}>{mode === 'signup' ? 'Sign in' : 'Create a profile'}</button></p><div className="auth-privacy"><ShieldCheck size={16}/> Your details are protected and kept private.</div></div><p className="auth-disclaimer">Demonstration only. Profile details are not sent to a server.</p></main><Footer/></>;
+}
+function Field({ label, hint, error, children }: { label: string; hint?: string; error?: string; children: ReactNode }) {
+  return <div className="field"><label className="field-label">{label}</label>{children}{hint && <span className="field-hint">{hint}</span>}{error && <span className="field-error" role="alert">{error}</span>}</div>;
+}
+function Simulator({ onBack }: { onBack: () => void }) {
+  const [form, setForm] = useState<LoanEligibilityRequest>(initialForm); const [result, setResult] = useState<LoanEligibilityResponse | null>(null); const [errors, setErrors] = useState<Record<string,string>>({}); const [submitting, setSubmitting] = useState(false);
+  const updatePersonal = (key: keyof LoanEligibilityRequest['personalInfo'], value: number | string) => setForm(prev=>({...prev,personalInfo:{...prev.personalInfo,[key]:value}}));
+  const updateFinancial = (key: keyof LoanEligibilityRequest['financialInfo'], value: number) => setForm(prev=>({...prev,financialInfo:{...prev.financialInfo,[key]:value}}));
+  const updateLoan = (key: keyof LoanEligibilityRequest['loanDetails'], value: number | string) => setForm(prev=>({...prev,loanDetails:{...prev.loanDetails,[key]:value}}));
+  const validate = () => { const next:Record<string,string>={}; const {personalInfo:p,financialInfo:f,loanDetails:l}=form;
+    if(p.age<18||p.age>65) next.age=validationRules.personalInfo.age.errorMessage;
+    if(!validationRules.personalInfo.employmentStatus.options.includes(p.employmentStatus)) next.employment=validationRules.personalInfo.employmentStatus.errorMessage;
+    if(p.employmentDuration<3) next.tenure=validationRules.personalInfo.employmentDuration.errorMessage;
+    if(f.monthlyIncome<5000) next.income=validationRules.financialInfo.monthlyIncome.errorMessage;
+    if(f.monthlyExpenses<0) next.expenses='Expenses cannot be below zero.';
+    if(f.existingDebt<0) next.debt='Existing debt cannot be below zero.';
+    if(f.creditScore<300||f.creditScore>850) next.credit=validationRules.financialInfo.creditScore.errorMessage;
+    if(l.requestedAmount<5000||l.requestedAmount>300000) next.amount=validationRules.loanDetails.requestedAmount.errorMessage;
+    if(l.loanTerm<6||l.loanTerm>60) next.term=validationRules.loanDetails.loanTerm.errorMessage;
+    setErrors(next); return Object.keys(next).length===0; };
+  const submit = (event:FormEvent) => { event.preventDefault(); if(!validate()) return; setSubmitting(true); window.setTimeout(()=>{setResult(simulateEligibilityCheck(form));setSubmitting(false);document.getElementById('estimate-results')?.scrollIntoView({behavior:'smooth',block:'start'});},400); };
+  return <><main className="application-page" id="application"><div className="application-top"><button className="back-link" onClick={onBack}>← Back to home</button><div className="secure-label"><LockKeyhole size={14}/> Secure estimate</div></div><div className="application-heading"><div className="eyebrow">PERSONAL LOAN SIMULATOR</div><h1>Let’s find your estimate.</h1><p>Share a few details to see an illustrative repayment and affordability view.</p><div className="step-indicator"><span className="step-current">1</span><div><strong>Your details</strong><small>About 3 minutes</small></div><span className="step-line"/><span className="step-next">2</span><div><strong className="muted">Your estimate</strong><small>Instant result</small></div></div></div>
+  <div className="application-layout"><form className="loan-form" onSubmit={submit} noValidate>
+    <section className="form-card"><div className="form-card-heading"><span className="section-icon">01</span><div><h2>About you</h2><p>A few details help us shape your estimate.</p></div></div><div className="fields-grid"><Field label="Your age" hint="You need to be between 18 and 65." error={errors.age}><div className="input-suffix"><input aria-label="Your age" type="number" min="18" max="65" value={form.personalInfo.age} onChange={e=>updatePersonal('age',Number(e.target.value))}/><span>years</span></div></Field><Field label="Employment status" error={errors.employment}><select aria-label="Employment status" value={form.personalInfo.employmentStatus} onChange={e=>updatePersonal('employmentStatus',e.target.value)}><option value="employed">Employed</option><option value="self_employed">Self-employed</option><option value="unemployed">Unemployed</option><option value="retired">Retired</option></select></Field><Field label="Time in current employment" hint="At least 3 months." error={errors.tenure}><div className="input-suffix"><input aria-label="Time in current employment" type="number" min="0" value={form.personalInfo.employmentDuration} onChange={e=>updatePersonal('employmentDuration',Number(e.target.value))}/><span>months</span></div></Field></div></section>
+    <section className="form-card"><div className="form-card-heading"><span className="section-icon">02</span><div><h2>Your monthly finances</h2><p>Approximate figures are fine for this estimate.</p></div></div><div className="fields-grid"><Field label="Take-home income" hint="After tax, per month." error={errors.income}><div className="input-prefix"><span>R</span><input aria-label="Take-home income per month" type="number" min="0" step="500" value={form.financialInfo.monthlyIncome} onChange={e=>updateFinancial('monthlyIncome',Number(e.target.value))}/></div></Field><Field label="Monthly expenses" hint="Rent, food, transport and essentials." error={errors.expenses}><div className="input-prefix"><span>R</span><input aria-label="Monthly expenses" type="number" min="0" step="500" value={form.financialInfo.monthlyExpenses} onChange={e=>updateFinancial('monthlyExpenses',Number(e.target.value))}/></div></Field><Field label="Existing monthly debt" hint="Loan and credit repayments." error={errors.debt}><div className="input-prefix"><span>R</span><input aria-label="Existing monthly debt" type="number" min="0" step="100" value={form.financialInfo.existingDebt} onChange={e=>updateFinancial('existingDebt',Number(e.target.value))}/></div></Field><Field label="Estimated credit score" hint="Optional. Slide if you know it." error={errors.credit}><div className="range-head"><strong>{form.financialInfo.creditScore}</strong><span>300–850</span></div><input className="range-input" aria-label="Estimated credit score" type="range" min="300" max="850" value={form.financialInfo.creditScore} onChange={e=>updateFinancial('creditScore',Number(e.target.value))}/><div className="range-labels"><span>Lower</span><span>Higher</span></div></Field></div></section>
+    <section className="form-card"><div className="form-card-heading"><span className="section-icon">03</span><div><h2>What you have in mind</h2><p>Choose an amount and repayment period.</p></div></div><div className="fields-grid"><Field label="Loan amount" hint="Between R5,000 and R300,000." error={errors.amount}><div className="input-prefix"><span>R</span><input aria-label="Requested loan amount" type="number" min="5000" max="300000" step="1000" value={form.loanDetails.requestedAmount} onChange={e=>updateLoan('requestedAmount',Number(e.target.value))}/></div></Field><Field label="Repayment period" error={errors.term}><div className="input-suffix"><select aria-label="Repayment period" value={form.loanDetails.loanTerm} onChange={e=>updateLoan('loanTerm',Number(e.target.value))}>{[6,12,18,24,36,48,60].map(term=><option key={term} value={term}>{term}</option>)}</select><span>months</span></div></Field><Field label="What is it for?"><select aria-label="Loan purpose" value={form.loanDetails.loanPurpose} onChange={e=>updateLoan('loanPurpose',e.target.value)}><option value="home_improvement">Home improvements</option><option value="debt_consolidation">Debt consolidation</option><option value="education">Education</option><option value="medical">Medical expenses</option><option value="other">Something else</option></select></Field></div><div className="estimate-note"><CircleHelp size={17}/><p>Your estimate is illustrative. A formal offer depends on a full affordability assessment.</p></div></section>
+    <div className="form-actions"><button className="button button-primary button-large submit-button" type="submit" disabled={submitting}>{submitting?'Calculating your estimate…':'See my estimate'} {!submitting&&<ArrowRight size={18}/>}</button><div className="form-secure"><ShieldCheck size={16}/> Your information is kept private</div></div>
+  </form><aside className="side-panel"><div className="side-panel-top"><div className="eyebrow">YOUR ESTIMATE</div><h2>A clearer view<br/>starts here.</h2><p>Complete your details to see a tailored illustration of your monthly repayment.</p><div className="empty-illustration"><div className="empty-ring"/><div className="empty-card"><span/><span/><span/></div><Sparkles className="empty-spark" size={22}/></div></div><div className="side-list"><div><CheckCircle2 size={17}/><span>See a possible monthly repayment</span></div><div><CheckCircle2 size={17}/><span>Understand how your budget looks</span></div><div><CheckCircle2 size={17}/><span>No credit bureau check in this demo</span></div></div><p className="side-fine">This simulator is a demonstration and does not make a lending decision.</p></aside></div>
+  {result&&<section className="results-card" id="estimate-results" aria-live="polite"><div className="results-top"><div><div className="eyebrow">YOUR ILLUSTRATIVE ESTIMATE</div><h2>{result.eligibilityResult.isEligible?'Here’s what it could look like.':'Let’s review your affordability.'}</h2><p>{result.eligibilityResult.isEligible?'This is an estimate based on the details you shared.':result.eligibilityResult.decisionReason}</p></div><span className={`result-badge ${result.eligibilityResult.isEligible?'badge-good':'badge-review'}`}>{result.eligibilityResult.isEligible?<><CheckCircle2 size={16}/> Estimate available</>:<><XCircle size={16}/> Review needed</>}</span></div><div className="results-grid"><div className="payment-highlight"><span>Estimated monthly repayment</span><strong>{money(result.recommendedLoan.monthlyPayment)}</strong><small>for {form.loanDetails.loanTerm} months · {result.recommendedLoan.interestRate}% illustrative rate</small></div><div className="result-metric"><span>Requested amount</span><strong>{money(form.loanDetails.requestedAmount)}</strong></div><div className="result-metric"><span>Estimated total repayment</span><strong>{money(result.recommendedLoan.totalRepayment)}</strong></div><div className="result-metric"><span>Monthly disposable income</span><strong>{money(result.affordabilityAnalysis.disposableIncome)}</strong></div><div className="result-metric"><span>Debt-to-income after estimate</span><strong>{result.affordabilityAnalysis.debtToIncomeRatio}%</strong></div></div><p className="result-disclaimer"><ShieldCheck size={16}/> This is a simulated estimate, not a credit decision or loan offer. Rates and amounts may differ after a full application.</p></section>}
+  </main><Footer/></>;
+}
 export default function App() {
-  // Centralized Form Payload State Object matching Capitec JSON schema
-  const [formData, setFormData] = useState<LoanEligibilityRequest>({
-    personalInfo: { age: 25, employmentStatus: 'employed', employmentDuration: 12 },
-    financialInfo: { monthlyIncome: 15000, monthlyExpenses: 7000, existingDebt: 2000, creditScore: 650 },
-    loanDetails: { requestedAmount: 50000, loanTerm: 24, loanPurpose: 'home_improvement' }
-  });
-
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [result, setResult] = useState<LoanEligibilityResponse | null>(null);
-
-  // Client-Side Real-Time Form Rules Validation
-  const validateForm = (): boolean => {
-    const newErrors: Record<string, string> = {};
-    const rules = validationRules; 
-
-    if (formData.personalInfo.age < rules.personalInfo.age.min || formData.personalInfo.age > rules.personalInfo.age.max) {
-      newErrors.age = rules.personalInfo.age.errorMessage;
-    }
-    if (formData.personalInfo.employmentDuration < rules.personalInfo.employmentDuration.min) {
-      newErrors.employmentDuration = rules.personalInfo.employmentDuration.errorMessage;
-    }
-    if (formData.financialInfo.monthlyIncome < rules.financialInfo.monthlyIncome.min) {
-      newErrors.monthlyIncome = rules.financialInfo.monthlyIncome.errorMessage;
-    }
-    if (formData.financialInfo.creditScore < rules.financialInfo.creditScore.min || formData.financialInfo.creditScore > rules.financialInfo.creditScore.max) {
-      newErrors.creditScore = rules.financialInfo.creditScore.errorMessage;
-    }
-    if (formData.loanDetails.requestedAmount < rules.loanDetails.requestedAmount.min || formData.loanDetails.requestedAmount > rules.loanDetails.requestedAmount.max) {
-      newErrors.requestedAmount = rules.loanDetails.requestedAmount.errorMessage;
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validateForm()) return;
-
-    setIsSubmitting(true);
-    // Simulate real-world retail banking async network latency
-    setTimeout(() => {
-      const evaluation = simulateEligibilityCheck(formData);
-      setResult(evaluation);
-      setIsSubmitting(false);
-    }, 800);
-  };
-
-  return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans antialiased">
-      {/* Production-Grade Capitec Corporate Branded Header */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
-        <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-[#005ea6] rounded-lg flex items-center justify-center font-bold text-white text-lg">C</div>
-            <span className="text-xl font-bold tracking-tight text-slate-900">Capitec <span className="text-slate-500 font-light text-base">Credit Labs</span></span>
-          </div>
-          <span className="text-xs bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full border border-emerald-200 font-medium">Production-Grade</span>
-        </div>
-      </header>
-
-      <main className="max-w-6xl mx-auto px-4 py-10 grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* User Interactive Financial Input Panel */}
-        <form onSubmit={handleSubmit} className="lg:col-span-7 space-y-6">
-          
-          {/* Section 1: Personal Parameters */}
-          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
-            <div className="flex items-center space-x-2 pb-2 border-b border-slate-100">
-              <Shield className="w-5 h-5 text-[#005ea6]" />
-              <h2 className="text-lg font-semibold text-slate-900">Personal Demographics</h2>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">Applicant Age</label>
-                <input type="number" value={formData.personalInfo.age} onChange={e => setFormData({...formData, personalInfo: {...formData.personalInfo, age: parseInt(e.target.value) || 0}})} className="w-full border border-slate-200 rounded-lg p-2.5 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-[#005ea6] outline-none transition-all" />
-                {errors.age && <p className="text-xs text-rose-600 mt-1">{errors.age}</p>}
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">Employment Profile</label>
-                <select value={formData.personalInfo.employmentStatus} onChange={e => setFormData({...formData, personalInfo: {...formData.personalInfo, employmentStatus: e.target.value as any}})} className="w-full border border-slate-200 rounded-lg p-2.5 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-[#005ea6] outline-none transition-all">
-                  <option value="employed">Permanently Employed</option>
-                  <option value="self_employed">Self Employed</option>
-                  <option value="unemployed">Unemployed</option>
-                  <option value="retired">Retired</option>
-                </select>
-              </div>
-              <div className="md:col-span-2">
-                <label className="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">Current Job Tenure (Months)</label>
-                <input type="number" value={formData.personalInfo.employmentDuration} onChange={e => setFormData({...formData, personalInfo: {...formData.personalInfo, employmentDuration: parseInt(e.target.value) || 0}})} className="w-full border border-slate-200 rounded-lg p-2.5 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-[#005ea6] outline-none transition-all" />
-                {errors.employmentDuration && <p className="text-xs text-rose-600 mt-1">{errors.employmentDuration}</p>}
-              </div>
-            </div>
-          </div>
-
-          {/* Section 2: Financial Metrics */}
-          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
-            <div className="flex items-center space-x-2 pb-2 border-b border-slate-100">
-              <Wallet className="w-5 h-5 text-[#005ea6]" />
-              <h2 className="text-lg font-semibold text-slate-900">Financial Position Metrics</h2>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">Net Monthly Income (ZAR)</label>
-                <input type="number" value={formData.financialInfo.monthlyIncome} onChange={e => setFormData({...formData, financialInfo: {...formData.financialInfo, monthlyIncome: parseInt(e.target.value) || 0}})} className="w-full border border-slate-200 rounded-lg p-2.5 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-[#005ea6] outline-none transition-all" />
-                {errors.monthlyIncome && <p className="text-xs text-rose-600 mt-1">{errors.monthlyIncome}</p>}
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">Declared Monthly Expenses (ZAR)</label>
-                <input type="number" value={formData.financialInfo.monthlyExpenses} onChange={e => setFormData({...formData, financialInfo: {...formData.financialInfo, monthlyExpenses: parseInt(e.target.value) || 0}})} className="w-full border border-slate-200 rounded-lg p-2.5 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-[#005ea6] outline-none transition-all" />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">Existing Debt Installments (ZAR)</label>
-                <input type="number" value={formData.financialInfo.existingDebt} onChange={e => setFormData({...formData, financialInfo: {...formData.financialInfo, existingDebt: parseInt(e.target.value) || 0}})} className="w-full border border-slate-200 rounded-lg p-2.5 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-[#005ea6] outline-none transition-all" />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">Credit Score Check ({formData.financialInfo.creditScore})</label>
-                <input type="range" min="300" max="850" value={formData.financialInfo.creditScore} onChange={e => setFormData({...formData, financialInfo: {...formData.financialInfo, creditScore: parseInt(e.target.value)}})} className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#005ea6] mt-3" />
-                <div className="flex justify-between text-[10px] text-slate-400 font-medium px-1 mt-1"><span>300 (Poor)</span><span>850 (Excellent)</span></div>
-              </div>
-            </div>
-          </div>
-
-          {/* Section 3: Facility Parameters */}
-          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
-            <div className="flex items-center space-x-2 pb-2 border-b border-slate-100">
-              <Landmark className="w-5 h-5 text-[#005ea6]" />
-              <h2 className="text-lg font-semibold text-slate-900">Facility Terms Specified</h2>
-            </div>
-            <div className="space-y-4">
-              </div>
-            </div>
-          </form>
-          </main>
-          </div>
-  )  }
-            
+  const [screen,setScreen]=useState<Screen>('home'); const [authMode,setAuthMode]=useState<AuthMode>('signup');
+  const openAuth=(mode:AuthMode)=>{setAuthMode(mode);setScreen('auth');window.scrollTo({top:0,behavior:'smooth'});};
+  const back=()=>{setScreen('home');window.scrollTo({top:0,behavior:'smooth'});};
+  return <div className="app-shell"><Header onSignIn={()=>openAuth('signin')} onStart={()=>openAuth('signup')}/>{screen==='home'&&<Home onStart={()=>openAuth('signup')}/ >}{screen==='auth'&&<Auth mode={authMode} setMode={setAuthMode} onContinue={()=>{setScreen('simulator');window.scrollTo({top:0,behavior:'smooth'});}} onBack={back}/ >}{screen==='simulator'&&<Simulator onBack={back}/ >}</div>;
+}

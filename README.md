@@ -1,75 +1,48 @@
-# React + TypeScript + Vite
+# Capitec Credit Loan Simulator
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A responsive personal loan eligibility simulator built with React, TypeScript, and Vite. It includes a landing page, a demonstration sign-in/sign-up flow, a validated loan affordability form, and an illustrative estimate based on the supplied endpoint brief.
 
-Currently, two official plugins are available:
+> This frontend is a portfolio demonstration. Sign-up and sign-in use an in-memory mock and reset when the page reloads. Eligibility is simulated in the browser. The app does not call a live lending API, run a credit bureau check, create a real account, or provide a loan offer. Do not enter real credentials or financial details.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Requirements
 
-## React Compiler
+- Node.js 20 or newer
+- Docker with Docker Compose (optional)
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Run locally
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```bash
+npm ci
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+Open the local URL printed by Vite.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Production build
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```bash
+npm run build
+npm run preview
 ```
+
+`npm run lint` checks the source with ESLint.
+
+## Run with Docker
+
+Build and start the production Nginx image:
+
+```bash
+docker compose up --build
+```
+
+Then open [http://localhost:8080](http://localhost:8080). To stop the container, run `docker compose down`.
+
+The Dockerfile uses a Node build stage and serves the compiled static site with Nginx.
+
+## Simulator behavior
+
+The demo sign-up creates an account in `src/auth/mockAuth.ts` memory, and sign-in checks against that account while the page remains open. Passwords are not written to a local file or browser storage. Reloading the app clears demo accounts.
+
+The form captures personal, employment, income, expense, debt, credit-score, requested-amount, term, and purpose details. Its client-side validation follows the provided validation rules, and its result uses the local calculation in `src/Calculator.ts` to display an illustrative repayment and affordability summary.
+
+For a production integration, replace the local simulation with the documented API endpoints and connect the authentication screens to an approved identity service. Do not send real banking or identity details to this demo.

@@ -43,6 +43,8 @@ The Dockerfile uses a Node build stage and serves the compiled static site with 
 
 The demo sign-up creates an account in `src/auth/mockAuth.ts` memory, and sign-in checks against that account while the page remains open. Passwords are not written to a local file or browser storage. Reloading the app clears demo accounts.
 
-The form captures personal, employment, income, expense, debt, credit-score, requested-amount, term, and purpose details. Its client-side validation follows the provided validation rules, and its result uses the local calculation in `src/Calculator.ts` to display an illustrative repayment and affordability summary.
+The form captures personal, employment, income, expense, debt, credit-score, requested-amount, term, and purpose details. Its client-side validation follows the provided validation rules. The simulator recalculates the interest rate and repayment from credit score, requested amount, and term. It estimates the maximum amount from the entered disposable income and existing debt, then checks whether the requested repayment fits those limits. Age, employment, employment duration, credit score, debt ratio, and remaining monthly income affect the result profile.
+
+The calculation uses explicit demonstration assumptions: a new repayment is capped at 40% of disposable income, and total debt repayments are capped at 40% of gross income. These thresholds and credit-score rate bands are invented for this demo and are not Capitec policy or a real lending decision.
 
 For a production integration, replace the local simulation with the documented API endpoints and connect the authentication screens to an approved identity service. Do not send real banking or identity details to this demo.

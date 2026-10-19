@@ -114,4 +114,3 @@ Inputs outside the form's allowed ranges (including age, income, credit score, r
 
 **When the requested amount is above the estimate:** the simulator marks the request ineligible, explains that its repayment exceeds the budget limit, and displays the maximum amount estimated for the selected term. The applicant can return to the form, change the amount or term, and recalculate. It does not silently replace the requested amount with the maximum.
 
-For a production integration, replace the local simulation with the documented API endpoints and connect the authentication screens to an approved identity service. Do not send real banking or identity details to this demo.

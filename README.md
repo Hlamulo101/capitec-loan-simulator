@@ -31,9 +31,12 @@ After starting the development server as described in [Run locally](#run-locally
 To check code quality and create a production bundle, run:
 
 ```bash
+npm test
 npm run lint
 npm run build
 ```
+
+The tests use Node's built-in test runner and TypeScript compiler; no test framework or browser is required.
 
 The Docker Compose steps are in [Run with Docker](#run-with-docker) below.
 
@@ -63,6 +66,28 @@ The Dockerfile uses a Node build stage and serves the compiled static site with 
 The demo sign-up creates an account in `src/auth/mockAuth.ts` memory, and sign-in checks against that account while the page remains open. Passwords are not written to a local file or browser storage. Reloading the app clears demo accounts.
 
 The form captures personal, employment, income, expense, debt, credit-score, requested-amount, term, and purpose details. Its client-side validation follows the supplied validation rules. `src/Calculator.ts` then calculates an illustrative rate, monthly repayment, estimated maximum loan amount, debt-to-income ratio, risk band, and affordability profile from the submitted values.
+
+### Architecture and decisions
+
+- `src/App.tsx` owns screen navigation and simulator form state. Inputs are controlled so the displayed values and submitted request stay in sync. Numeric fields keep a short-lived string draft alongside the numeric request model; this lets a user clear a value while editing without converting the empty string back to zero.
+- `src/formValidation.ts` is the single form-validation entry point. It uses the shared constraints in `src/validationRules.ts` and accepts empty numeric drafts separately, because an empty field cannot be represented by the API-shaped numeric request type.
+- `src/Calculator.ts` is a pure calculation module. It has no React or browser dependencies, which makes the assumptions and edge cases straightforward to test.
+- The estimate is calculated synchronously in the browser. There is no fake network delay or API abstraction because the assessment is frontend-focused and provides no endpoint.
+- The demo authentication map is intentionally held in memory. This avoids implying that this portfolio demo provides secure account storage or real authentication.
+
+The simulator is small enough that it does not add memoization or state-management libraries. If the form or estimate became expensive, profile it first, then isolate components or calculations that show measurable re-render or compute cost.
+
+### Test coverage
+
+`npm test` covers valid and invalid form input, zero-valued expenses and debt, and estimate outputs for an unaffordable request. It does not replace browser-level tests for keyboard navigation, screen-reader behavior, or the complete signup-to-estimate flow.
+
+### Known tradeoffs to discuss
+
+- Eligibility thresholds and rates are invented demo assumptions, fully described below; they must never be treated as Capitec policy or a lending decision.
+- Authentication and estimates are client-side only. A production service would need server-side validation, secure identity and session handling, auditability, and authoritative lending rules.
+- Loan purpose is collected for a realistic form but currently does not change the estimate.
+- Validation is client-side for immediate feedback. A real API must repeat and own all security-sensitive validation.
+- A future API integration would need loading, error, timeout, retry, and stale-response handling. These are intentionally not simulated in the current frontend-only version.
 
 ### Illustrative assumptions
 

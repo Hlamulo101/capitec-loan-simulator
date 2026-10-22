@@ -27,6 +27,7 @@ After starting the development server as described in [Run locally](#run-locally
 3. Select **See my estimate**. Valid inputs open the separate result screen with the estimated payment, maximum amount for the selected term, decision reason, risk band, and affordability profile.
 4. Select **Edit my details** to return to the form with your values preserved. Change a value and submit again to see the estimate recalculate.
 5. To see an affordability decline, try age 29, employed for 36 months, monthly income R20,000, monthly expenses R12,000, existing debt R4,000, credit score 650, requested amount R200,000, and a 12-month term. The requested payment exceeds this demo's calculated capacity; the result explains the limit and displays the estimated maximum for that term.
+6. Select **Sign out** from the form or estimate screen to return to the landing page. The demo profile remains available in memory until the page reloads, so you can sign in again.
 
 To check code quality and create a production bundle, run:
 
@@ -63,7 +64,7 @@ The Dockerfile uses a Node build stage and serves the compiled static site with 
 
 ## Simulator behavior
 
-The demo sign-up creates an account in `src/auth/mockAuth.ts` memory, and sign-in checks against that account while the page remains open. Passwords are not written to a local file or browser storage. Reloading the app clears demo accounts.
+The demo sign-up creates an account in `src/auth/mockAuth.ts` memory, and sign-in checks against that account while the page remains open. Sign out returns to the landing page but keeps the mock account in memory so the user can sign in again. Passwords are not written to a local file or browser storage. Reloading the app clears demo accounts.
 
 The form captures personal, employment, income, expense, debt, credit-score, requested-amount, term, and purpose details. Its client-side validation follows the supplied validation rules. `src/Calculator.ts` then calculates an illustrative rate, monthly repayment, estimated maximum loan amount, debt-to-income ratio, risk band, and affordability profile from the submitted values.
 
